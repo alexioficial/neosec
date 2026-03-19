@@ -11,6 +11,7 @@ import (
 	"neosec/models"
 	"neosec/ws"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -35,23 +36,44 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	serverID := r.URL.Query().Get("server")
+	channelID := r.URL.Query().Get("channel")
+
+	if serverID == "" {
+		serverID = "global"
+	}
+	if channelID == "" {
+		channelID = "general"
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	opts := options.Find().SetSort(bson.D{{"created_at", 1}}).SetLimit(50)
-	cursor, err := db.MessagesCollection.Find(ctx, bson.M{"channel_id": "general"}, opts)
-
+	cursor, err := db.MessagesCollection.Find(ctx, bson.M{"server_id": serverID, "channel_id": channelID}, opts)
 	var messages []models.Message
 	if err == nil {
 		cursor.All(ctx, &messages)
 	}
 
+	cursorS, _ := db.ServersCollection.Find(ctx, bson.M{})
+	var servers []models.Server
+	cursorS.All(ctx, &servers)
+
+	cursorC, _ := db.ChannelsCollection.Find(ctx, bson.M{"server_id": serverID})
+	var channels []models.Channel
+	cursorC.All(ctx, &channels)
+
 	data := struct {
 		Username string
 		Messages []models.Message
+		Servers  []models.Server
+		Channels []models.Channel
 	}{
 		Username: cookie.Value,
 		Messages: messages,
+		Servers:  servers,
+		Channels: channels,
 	}
 
 	err = tmpl.ExecuteTemplate(w, "index.html", data)
@@ -59,7 +81,49 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error executing index template:", err)
 	}
 }
+func CreateServerHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		return
+	}
+	name := r.FormValue("name")
+	cookie, _ := r.Cookie("username")
 
+	serverID := uuid.New().String()
+	server := models.Server{ID: serverID, Name: name, Owner: cookie.Value}
+	db.ServersCollection.InsertOne(context.Background(), server)
+
+	// Return HTML snippet for HTMX
+	shortName := name
+	if len(name) > 2 {
+		shortName = name[:2]
+	}
+	w.Header().Set("Content-Type", "text/html")
+	html := `<a href="?server=` + serverID + `" class="server-icon">` + shortName + `</a>`
+	w.Write([]byte(html))
+}
+
+func CreateChannelHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		return
+	}
+	name := r.FormValue("name")
+	serverID := r.FormValue("server_id")
+	if serverID == "" || serverID == "default" {
+		serverID = "global" // Fallback
+	}
+
+	channelID := uuid.New().String()
+	channel := models.Channel{ID: channelID, Name: name, ServerID: serverID}
+	db.ChannelsCollection.InsertOne(context.Background(), channel)
+
+	w.Header().Set("Content-Type", "text/html")
+	html := `<a href="?server=` + serverID + `&channel=` + channelID + `" class="channel-item" style="text-decoration: none;"><span class="channel-hash">#</span> ` + name + `</a>`
+	w.Write([]byte(html))
+}
+func CreateFriendRequestHandler(w http.ResponseWriter, r *http.Request) {
+	// Dummy handler for now
+	w.WriteHeader(http.StatusOK)
+}
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)

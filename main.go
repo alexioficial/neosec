@@ -29,6 +29,9 @@ func main() {
 	http.HandleFunc("/", handlers.IndexHandler)
 	http.HandleFunc("/login", handlers.LoginHandler)
 	http.HandleFunc("/logout", handlers.LogoutHandler)
+	http.HandleFunc("/api/servers", handlers.CreateServerHandler)
+	http.HandleFunc("/api/channels", handlers.CreateChannelHandler)
+	http.HandleFunc("/api/friends", handlers.CreateFriendRequestHandler)
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		ws.ServeWs(hub, w, r)
 	})
