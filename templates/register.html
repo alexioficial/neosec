@@ -1,0 +1,45 @@
+{{template "base" .}} {{define "title"}}NeoSec - Register{{end}} {{define
+"content"}}
+<div class="login-wrapper">
+    <div class="login-box">
+        <h1>Crear una cuenta</h1>
+        <div class="subtitle">Únete a nosotros.</div>
+        <form hx-post="/register" hx-target="#error-msg">
+            <div class="input-group">
+                <label>Usuario</label>
+                <input
+                    type="text"
+                    name="username"
+                    required
+                    autocomplete="off"
+                />
+            </div>
+            <div class="input-group">
+                <label>Contraseña</label>
+                <input type="password" name="password" required />
+            </div>
+            <div class="input-group">
+                <label>Confirmar Contraseña</label>
+                <input type="password" name="confirm_password" required />
+            </div>
+            <button type="submit">Registrarse</button>
+            <div id="error-msg" class="error"></div>
+        </form>
+        <a
+            href="/login"
+            class="secondary-btn"
+            style="
+                width: 100%;
+                padding: 12px;
+                border-radius: 3px;
+                font-size: 16px;
+                font-weight: 500;
+                color: white;
+                display: block;
+                margin-top: 10px;
+            "
+            >¿Ya tienes una cuenta?</a
+        >
+    </div>
+</div>
+{{end}}

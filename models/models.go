@@ -38,6 +38,12 @@ type DirectMessage struct {
 	CreatedAt primitive.DateTime `bson:"created_at"`
 }
 
+type Friend struct {
+	ID    primitive.ObjectID `bson:"_id,omitempty"`
+	User1 string             `bson:"user1"`
+	User2 string             `bson:"user2"`
+}
+
 type WsMessage struct {
 	ChatMessage string `json:"chat_message"`
 	ChannelID   string `json:"channel_id"`

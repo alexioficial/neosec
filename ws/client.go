@@ -79,22 +79,34 @@ func (c *Client) readPump() {
 			channelID = "general"
 		}
 		if serverID == "" {
-			serverID = "global"
+			serverID = "@me"
 		}
 
-		newMsg := models.Message{
-			ServerID:  serverID,
-			ChannelID: channelID,
-			Username:  c.Username,
-			Content:   wsMsg.ChatMessage,
-			CreatedAt: primitive.NewDateTimeFromTime(time.Now()),
-		}
-		_, err = db.MessagesCollection.InsertOne(context.Background(), newMsg)
-		if err != nil {
-			log.Println("Error saving message:", err)
-		}
+		if serverID == "@me" {
+			friend := channelID
+			u1, u2 := c.Username, friend
+			if u1 > u2 {
+				u1, u2 = u2, u1
+			}
+			newMsg := models.DirectMessage{
+				User1:     u1,
+				User2:     u2,
+				Sender:    c.Username,
+				Content:   wsMsg.ChatMessage,
+				CreatedAt: primitive.NewDateTimeFromTime(time.Now()),
+			}
+			db.DirectMessagesCollection.InsertOne(context.Background(), newMsg)
 
-		tmpl := `<div hx-swap-oob="beforeend:#chat-messages">
+			tmpl := `<div hx-swap-oob="beforeend:#chat-messages-@me-%s">
+            <div class="message">
+                <div class="message-header">
+                    <span class="message-author">%s</span>
+                    <span class="message-timestamp">%s</span>
+                </div>
+                <div class="message-content">%s</div>
+            </div>
+        </div>
+		<div hx-swap-oob="beforeend:#chat-messages-@me-%s">
             <div class="message">
                 <div class="message-header">
                     <span class="message-author">%s</span>
@@ -103,9 +115,34 @@ func (c *Client) readPump() {
                 <div class="message-content">%s</div>
             </div>
         </div>`
-		htmlStr := fmt.Sprintf(tmpl, c.Username, time.Now().Format("15:04"), wsMsg.ChatMessage)
+			htmlStr := fmt.Sprintf(tmpl, friend, c.Username, time.Now().Format("15:04"), wsMsg.ChatMessage, c.Username, c.Username, time.Now().Format("15:04"), wsMsg.ChatMessage)
+			c.Hub.Broadcast <- []byte(htmlStr)
+		} else {
+			newMsg := models.Message{
+				ServerID:  serverID,
+				ChannelID: channelID,
+				Username:  c.Username,
+				Content:   wsMsg.ChatMessage,
+				CreatedAt: primitive.NewDateTimeFromTime(time.Now()),
+			}
+			_, err = db.MessagesCollection.InsertOne(context.Background(), newMsg)
+			if err != nil {
+				log.Println("Error saving message:", err)
+			}
 
-		c.Hub.Broadcast <- []byte(htmlStr)
+			tmpl := `<div hx-swap-oob="beforeend:#chat-messages-%s-%s">
+				<div class="message">
+					<div class="message-header">
+						<span class="message-author">%s</span>
+						<span class="message-timestamp">%s</span>
+					</div>
+					<div class="message-content">%s</div>
+				</div>
+			</div>`
+			htmlStr := fmt.Sprintf(tmpl, serverID, channelID, c.Username, time.Now().Format("15:04"), wsMsg.ChatMessage)
+
+			c.Hub.Broadcast <- []byte(htmlStr)
+		}
 	}
 }
 

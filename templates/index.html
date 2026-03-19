@@ -1,581 +1,305 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="UTF-8" />
-        <title>NeoSec - Discord Clone</title>
-        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-        <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
-        <style>
-            :root {
-                --servers-bg: #1e1f22;
-                --channels-bg: #2b2d31;
-                --chat-bg: #313338;
-                --members-bg: #2b2d31;
-                --text-normal: #dbdee1;
-                --text-muted: #949ba4;
-                --divider: #3f4147;
-                --primary: #5865f2;
-                --hover-bg: #35373c;
-                --input-bg: #383a40;
-                --panel-color: #313338;
-            }
-            body,
-            html {
-                margin: 0;
-                padding: 0;
-                height: 100vh;
-                display: flex;
-                font-family:
-                    "gg sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-                color: var(--text-normal);
-                background-color: var(--chat-bg);
-                overflow: hidden;
-            }
-            .servers {
-                width: 72px;
-                background-color: var(--servers-bg);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                padding-top: 12px;
-                overflow-y: auto;
-            }
-            .server-icon {
-                width: 48px;
-                height: 48px;
-                background-color: var(--chat-bg);
-                border-radius: 24px;
-                margin-bottom: 8px;
-                cursor: pointer;
-                transition:
-                    border-radius 0.2s,
-                    background-color 0.2s;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                color: var(--text-normal);
-                font-weight: bold;
-                font-size: 16px;
-                text-decoration: none;
-                overflow: hidden;
-                flex-shrink: 0;
-            }
-            .server-icon:hover,
-            .server-icon.active {
-                border-radius: 16px;
-                background-color: var(--primary);
-                color: white;
-            }
-            .divider {
-                width: 32px;
-                height: 2px;
-                background-color: var(--divider);
-                margin-bottom: 8px;
-                border-radius: 1px;
-                flex-shrink: 0;
-            }
-            .channels {
-                width: 240px;
-                background-color: var(--channels-bg);
-                display: flex;
-                flex-direction: column;
-            }
-            .channels-header {
-                height: 48px;
-                padding: 0 16px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                font-weight: 600;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                z-index: 2;
-            }
-            .channel-list {
-                padding: 16px 8px;
-                flex: 1;
-                overflow-y: auto;
-            }
-            .channel-item {
-                padding: 6px 8px;
-                margin-bottom: 2px;
-                border-radius: 4px;
-                color: var(--text-muted);
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                text-decoration: none;
-            }
-            .channel-item:hover {
-                background-color: var(--hover-bg);
-                color: var(--text-normal);
-            }
-            .channel-item.active {
-                background-color: rgba(255, 255, 255, 0.06);
-                color: white;
-            }
-            .channel-hash {
-                font-size: 20px;
-                margin-right: 6px;
-                color: var(--text-muted);
-            }
-            .user-panel {
-                height: 52px;
-                background-color: #232428;
-                display: flex;
-                align-items: center;
-                padding: 0 8px;
-                justify-content: space-between;
-            }
-            .user-info {
-                display: flex;
-                align-items: center;
-            }
-            .avatar {
-                width: 32px;
-                height: 32px;
-                border-radius: 50%;
-                background-color: var(--primary);
-                margin-right: 8px;
-            }
-            .logout-btn,
-            .action-btn {
-                background: none;
-                border: none;
-                color: var(--text-muted);
-                cursor: pointer;
-                padding: 4px;
-            }
-            .logout-btn:hover {
-                color: #fa777c;
-            }
-            .action-btn:hover {
-                color: white;
-            }
+{{template "base" .}} {{define "title"}}NeoSec - Discord Clone{{end}} {{define
+"head"}}
+<script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+{{end}} {{define "bodyattrs"}}hx-ext="ws" ws-connect="/ws"{{end}} {{define
+"content"}}
+<div class="index-wrapper">
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentServer = urlParams.get("server") || "@me";
+        const currentChannel = urlParams.get("channel") || "";
+    </script>
 
-            .chat-area {
-                flex: 1;
+    <!-- Modals -->
+    <dialog id="server-modal">
+        <h2>Crear tu servidor</h2>
+        <form
+            hx-post="/api/servers"
+            hx-target="#servers-list"
+            hx-swap="beforeend"
+            onsubmit="
+                document.getElementById('server-modal').close();
+                this.reset();
+            "
+        >
+            <label>Nombre del servidor</label>
+            <input type="text" name="name" required autocomplete="off" />
+            <div class="dialog-buttons">
+                <button
+                    type="button"
+                    class="dialog-btn"
+                    onclick="document.getElementById('server-modal').close()"
+                >
+                    Cancelar
+                </button>
+                <button type="submit" class="dialog-btn primary">Crear</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="channel-modal">
+        <h2>Crear Canal</h2>
+        <form
+            hx-post="/api/channels"
+            hx-target="#channel-list"
+            hx-swap="beforeend"
+            onsubmit="
+                document.getElementById('channel-modal').close();
+                this.reset();
+            "
+        >
+            <label>Nombre del canal</label>
+            <input type="text" name="name" required autocomplete="off" />
+            <input
+                type="hidden"
+                name="server_id"
+                id="modal-server-id"
+                value=""
+            />
+            <script>
+                document.getElementById("modal-server-id").value =
+                    currentServer;
+            </script>
+            <div class="dialog-buttons">
+                <button
+                    type="button"
+                    class="dialog-btn"
+                    onclick="document.getElementById('channel-modal').close()"
+                >
+                    Cancelar
+                </button>
+                <button type="submit" class="dialog-btn primary">Crear</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="friend-modal">
+        <h2>Añadir Amigo</h2>
+        <form
+            hx-post="/api/friends"
+            onsubmit="
+                document.getElementById('friend-modal').close();
+                this.reset();
+                alert('Solicitud enviada (simulado)');
+                return false;
+            "
+        >
+            <label>Nombre de usuario</label>
+            <input
+                type="text"
+                name="username"
+                placeholder="Puedes añadir a cualquier usuario"
+                required
+                autocomplete="off"
+            />
+            <div class="dialog-buttons">
+                <button
+                    type="button"
+                    class="dialog-btn"
+                    onclick="document.getElementById('friend-modal').close()"
+                >
+                    Cancelar
+                </button>
+                <button type="submit" class="dialog-btn primary">
+                    Enviar solicitud
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Layout -->
+    <div class="servers">
+        <a href="?server=@me" class="server-icon" id="home-server">NS</a>
+        <div class="divider"></div>
+        <div
+            id="servers-list"
+            style="
                 display: flex;
                 flex-direction: column;
-                background-color: var(--chat-bg);
-            }
-            .chat-header {
-                height: 48px;
-                padding: 0 16px;
-                display: flex;
                 align-items: center;
-                justify-content: space-between;
-                font-weight: 600;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                z-index: 2;
-                border-bottom: 1px solid var(--divider);
-            }
-            .messages-container {
-                flex: 1;
-                overflow-y: auto;
-                padding: 16px;
-                display: flex;
-                flex-direction: column;
-            }
-            .message {
-                margin-top: 16px;
-                display: flex;
-                flex-direction: column;
-            }
-            .message-header {
-                display: flex;
-                align-items: baseline;
-                margin-bottom: 4px;
-            }
-            .message-author {
-                font-weight: 500;
-                color: white;
-                margin-right: 8px;
-            }
-            .message-timestamp {
-                font-size: 12px;
-                color: var(--text-muted);
-            }
-            .message-content {
-                color: var(--text-normal);
-                line-height: 1.375rem;
-                word-wrap: break-word;
-            }
-            .input-area {
-                padding: 0 16px 24px 16px;
-            }
-            .message-input-form {
-                display: flex;
-                background-color: var(--input-bg);
-                border-radius: 8px;
-                padding: 0 16px;
-            }
-            .message-input {
-                flex: 1;
-                background: transparent;
-                border: none;
-                color: var(--text-normal);
-                padding: 11px 0;
-                font-size: 16px;
-                outline: none;
-            }
-            .members {
-                width: 240px;
-                background-color: var(--members-bg);
-                padding: 24px 16px;
-            }
-            .members-header {
-                font-size: 12px;
-                font-weight: 600;
-                color: var(--text-muted);
-                text-transform: uppercase;
-                margin-bottom: 8px;
-            }
-            dialog {
-                background: var(--panel-color);
-                color: var(--text-normal);
-                border: none;
-                border-radius: 8px;
-                padding: 24px;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-                width: 400px;
-            }
-            dialog::backdrop {
-                background: rgba(0, 0, 0, 0.7);
-            }
-            dialog h2 {
-                margin-top: 0;
-                color: white;
-                text-align: center;
-            }
-            dialog label {
-                display: block;
-                margin-bottom: 8px;
-                color: var(--text-muted);
-                font-weight: bold;
-                font-size: 12px;
-                text-transform: uppercase;
-            }
-            dialog input {
                 width: 100%;
-                padding: 10px;
-                margin-bottom: 20px;
-                background: var(--input-bg);
-                color: white;
-                border: none;
-                border-radius: 4px;
-                box-sizing: border-box;
-                outline: none;
-            }
-            dialog input:focus {
-                border: 1px solid var(--primary);
-            }
-            .dialog-buttons {
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-            }
-            .dialog-btn {
-                background: transparent;
-                color: white;
-                border: none;
-                cursor: pointer;
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-            .dialog-btn.primary {
-                background: var(--primary);
-            }
-            .dialog-btn.primary:hover {
-                background: #4752c4;
-            }
-        </style>
-    </head>
-    <body hx-ext="ws" ws-connect="/ws">
-        <script>
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentServer = urlParams.get("server") || "global";
-            const currentChannel = urlParams.get("channel") || "general";
-        </script>
+            "
+        >
+            {{range .Servers}}
+            <a href="?server={{.ID}}" class="server-icon"
+                >{{slice .Name 0 2}}</a
+            >
+            {{end}}
+        </div>
+        <div
+            class="server-icon"
+            style="background-color: #313338; color: #23a559"
+            onclick="document.getElementById('server-modal').showModal()"
+        >
+            +
+        </div>
+    </div>
 
-        <!-- Modals -->
-        <dialog id="server-modal">
-            <h2>Crear tu servidor</h2>
-            <form
-                hx-post="/api/servers"
-                hx-target="#servers-list"
-                hx-swap="beforeend"
-                onsubmit="
-                    document.getElementById('server-modal').close();
-                    this.reset();
+    <div class="channels">
+        <div class="channels-header">
+            <span
+                >{{if eq .CurrentServer "@me"}}Amigos{{else}}Server{{end}}</span
+            >
+            {{if ne .CurrentServer "@me"}}
+            <button
+                class="action-btn"
+                title="Crear Canal"
+                onclick="document.getElementById('channel-modal').showModal()"
+            >
+                +
+            </button>
+            {{end}}
+        </div>
+        <div class="channel-list" id="channel-list">
+            {{if eq .CurrentServer "@me"}}
+            <div
+                style="
+                    padding: 8px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    color: var(--text-muted);
+                    text-transform: uppercase;
                 "
             >
-                <label>Nombre del servidor</label>
-                <input type="text" name="name" required autocomplete="off" />
-                <div class="dialog-buttons">
-                    <button
-                        type="button"
-                        class="dialog-btn"
-                        onclick="
-                            document.getElementById('server-modal').close()
-                        "
+                Mensajes Directos
+            </div>
+            {{range .Friends}}
+            <a
+                href="?server=@me&channel={{.}}"
+                class="channel-item {{if eq $.CurrentChannel .}}active{{end}}"
+                style="text-decoration: none"
+            >
+                <div
+                    class="avatar"
+                    style="width: 24px; height: 24px; margin-right: 8px"
+                ></div>
+                {{.}}
+            </a>
+            {{end}} {{else}} {{range .Channels}}
+            <a
+                href="?server={{.ServerID}}&channel={{.ID}}"
+                class="channel-item {{if eq $.CurrentChannel .ID}}active{{end}}"
+                style="text-decoration: none"
+            >
+                <span class="channel-hash">#</span> {{.Name}}
+            </a>
+            {{end}} {{end}}
+        </div>
+        <div class="user-panel">
+            <div class="user-info">
+                <div class="avatar"></div>
+                <div>{{.Username}}</div>
+            </div>
+            <button hx-post="/logout" class="logout-btn" title="Cerrar sesión">
+                🚪
+            </button>
+        </div>
+    </div>
+
+    <div class="chat-area">
+        <div class="chat-header">
+            <div>
+                {{if ne .CurrentServer "@me"}}<span class="channel-hash">#</span
+                >{{else}}<span class="channel-hash">@</span>{{end}}
+                <span id="current-channel-name"
+                    >{{if
+                    .CurrentChannel}}{{.CurrentChannel}}{{else}}...{{end}}</span
+                >
+            </div>
+            <div>
+                <button
+                    class="action-btn"
+                    title="Añadir Amigo"
+                    onclick="
+                        document.getElementById('friend-modal').showModal()
+                    "
+                >
+                    👤 Añadir Amigo
+                </button>
+            </div>
+        </div>
+        <div
+            class="messages-container"
+            id="chat-messages-{{.CurrentServer}}-{{.CurrentChannel}}"
+        >
+            {{range .Messages}}
+            <div class="message">
+                <div class="message-header">
+                    <span class="message-author">{{.Username}}</span>
+                    <span class="message-timestamp"
+                        >{{.CreatedAt.Time.Format "15:04"}}</span
                     >
-                        Cancelar
-                    </button>
-                    <button type="submit" class="dialog-btn primary">
-                        Crear
-                    </button>
                 </div>
-            </form>
-        </dialog>
-
-        <dialog id="channel-modal">
-            <h2>Crear Canal</h2>
+                <div class="message-content">{{.Content}}</div>
+            </div>
+            {{end}}
+        </div>
+        <div class="input-area">
             <form
-                hx-post="/api/channels"
-                hx-target="#channel-list"
-                hx-swap="beforeend"
+                ws-send
+                class="message-input-form"
                 onsubmit="
-                    document.getElementById('channel-modal').close();
-                    this.reset();
+                    setTimeout(() => {
+                        this.reset();
+                        document.querySelector(
+                            '.messages-container',
+                        ).scrollTop = document.querySelector(
+                            '.messages-container',
+                        ).scrollHeight;
+                    }, 10)
                 "
             >
-                <label>Nombre del canal</label>
-                <input type="text" name="name" required autocomplete="off" />
+                <input
+                    type="text"
+                    name="chat_message"
+                    class="message-input"
+                    placeholder="Enviar mensaje"
+                    autocomplete="off"
+                    autofocus
+                />
+                <!-- Hidden inputs to send state with websocket message -->
                 <input
                     type="hidden"
                     name="server_id"
-                    id="modal-server-id"
+                    id="ws-server-id"
                     value=""
                 />
-                <script>
-                    document.getElementById("modal-server-id").value =
-                        currentServer;
-                </script>
-                <div class="dialog-buttons">
-                    <button
-                        type="button"
-                        class="dialog-btn"
-                        onclick="
-                            document.getElementById('channel-modal').close()
-                        "
-                    >
-                        Cancelar
-                    </button>
-                    <button type="submit" class="dialog-btn primary">
-                        Crear
-                    </button>
-                </div>
-            </form>
-        </dialog>
-
-        <dialog id="friend-modal">
-            <h2>Añadir Amigo</h2>
-            <form
-                hx-post="/api/friends"
-                onsubmit="
-                    document.getElementById('friend-modal').close();
-                    this.reset();
-                    alert('Solicitud enviada (simulado)');
-                    return false;
-                "
-            >
-                <label>Nombre de usuario</label>
                 <input
-                    type="text"
-                    name="username"
-                    placeholder="Puedes añadir a cualquier usuario"
-                    required
-                    autocomplete="off"
+                    type="hidden"
+                    name="channel_id"
+                    id="ws-channel-id"
+                    value=""
                 />
-                <div class="dialog-buttons">
-                    <button
-                        type="button"
-                        class="dialog-btn"
-                        onclick="
-                            document.getElementById('friend-modal').close()
-                        "
-                    >
-                        Cancelar
-                    </button>
-                    <button type="submit" class="dialog-btn primary">
-                        Enviar solicitud
-                    </button>
-                </div>
             </form>
-        </dialog>
+        </div>
+    </div>
 
-        <!-- Layout -->
-        <div class="servers">
-            <a
-                href="?server=global&channel=general"
-                class="server-icon"
-                id="home-server"
-                >NS</a
-            >
-            <div class="divider"></div>
+    <div class="members">
+        <div class="members-header">En línea</div>
+        <div class="channel-item" style="padding: 6px 0">
             <div
-                id="servers-list"
-                style="
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    width: 100%;
-                "
-            >
-                {{range .Servers}}
-                <a href="?server={{.ID}}" class="server-icon"
-                    >{{slice .Name 0 2}}</a
-                >
-                {{end}}
-            </div>
-            <div
-                class="server-icon"
-                style="background-color: #313338; color: #23a559"
-                onclick="document.getElementById('server-modal').showModal()"
-            >
-                +
-            </div>
+                class="avatar"
+                style="width: 32px; height: 32px; margin-right: 12px"
+            ></div>
+            {{.Username}}
         </div>
+    </div>
 
-        <div class="channels">
-            <div class="channels-header">
-                <span>Server</span>
-                <button
-                    class="action-btn"
-                    title="Crear Canal"
-                    onclick="
-                        document.getElementById('channel-modal').showModal()
-                    "
-                >
-                    +
-                </button>
-            </div>
-            <div class="channel-list" id="channel-list">
-                <a href="?server=global&channel=general" class="channel-item" style="text-decoration: none;">
-                    <span class="channel-hash">#</span> general
-                </a>
-                {{range .Channels}}
-                <a
-                    href="?server={{.ServerID}}&channel={{.ID}}"
-                    class="channel-item"
-                    style="text-decoration: none"
-                >
-                    <span class="channel-hash">#</span> {{.Name}}
-                </a>
-                {{end}}
-            </div>
-            <div class="user-panel">
-                <div class="user-info">
-                    <div class="avatar"></div>
-                    <div>{{.Username}}</div>
-                </div>
-                <button
-                    hx-post="/logout"
-                    class="logout-btn"
-                    title="Cerrar sesión"
-                >
-                    🚪
-                </button>
-            </div>
-        </div>
+    <script>
+        document.getElementById("ws-server-id").value = currentServer;
+        document.getElementById("ws-channel-id").value = currentChannel;
 
-        <div class="chat-area">
-            <div class="chat-header">
-                <div>
-                    <span class="channel-hash">#</span>
-                    <span id="current-channel-name">...</span>
-                </div>
-                <div>
-                    <button
-                        class="action-btn"
-                        title="Añadir Amigo"
-                        onclick="
-                            document.getElementById('friend-modal').showModal()
-                        "
-                    >
-                        👤 Añadir Amigo
-                    </button>
-                </div>
-            </div>
-            <div class="messages-container" id="chat-messages">
-                {{range .Messages}}
-                <div class="message">
-                    <div class="message-header">
-                        <span class="message-author">{{.Username}}</span>
-                        <span class="message-timestamp"
-                            >{{.CreatedAt.Time.Format "15:04"}}</span
-                        >
-                    </div>
-                    <div class="message-content">{{.Content}}</div>
-                </div>
-                {{end}}
-            </div>
-            <div class="input-area">
-                <form
-                    ws-send
-                    class="message-input-form"
-                    onsubmit="
-                        setTimeout(() => {
-                            this.reset();
-                            document.querySelector(
-                                '.messages-container',
-                            ).scrollTop = document.querySelector(
-                                '.messages-container',
-                            ).scrollHeight;
-                        }, 10)
-                    "
-                >
-                    <input
-                        type="text"
-                        name="chat_message"
-                        class="message-input"
-                        placeholder="Enviar mensaje"
-                        autocomplete="off"
-                        autofocus
-                    />
-                    <!-- Hidden inputs to send state with websocket message -->
-                    <input
-                        type="hidden"
-                        name="server_id"
-                        id="ws-server-id"
-                        value=""
-                    />
-                    <input
-                        type="hidden"
-                        name="channel_id"
-                        id="ws-channel-id"
-                        value=""
-                    />
-                </form>
-            </div>
-        </div>
+        if (currentServer === "@me") {
+            document.getElementById("home-server").classList.add("active");
+        }
 
-        <div class="members">
-            <div class="members-header">En línea</div>
-            <div class="channel-item" style="padding: 6px 0">
-                <div
-                    class="avatar"
-                    style="width: 32px; height: 32px; margin-right: 12px"
-                ></div>
-                {{.Username}}
-            </div>
-        </div>
+        const container = document.querySelector(".messages-container");
+        if (container) container.scrollTop = container.scrollHeight;
 
-        <script>
-            document.getElementById("ws-server-id").value = currentServer;
-            document.getElementById("ws-channel-id").value = currentChannel;
-
-            if (currentServer === "global") {
-                document.getElementById("home-server").classList.add("active");
-            }
-
+        document.body.addEventListener("htmx:wsAfterMessage", function (e) {
             const container = document.querySelector(".messages-container");
             if (container) container.scrollTop = container.scrollHeight;
-
-            document.body.addEventListener("htmx:wsAfterMessage", function (e) {
-                const container = document.querySelector(".messages-container");
-                if (container) container.scrollTop = container.scrollHeight;
-            });
-        </script>
-    </body>
-</html>
+        });
+    </script>
+</div>
+{{end}}
