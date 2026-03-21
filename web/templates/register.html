@@ -10,21 +10,22 @@
     <body class="auth-page">
         <div class="auth-container">
             <h2>Create an account</h2>
+            <br/>
             <form
-                hx-post="/api/v9/auth/register"
+                hx-post="/api/v1/auth/register"
                 hx-target="#error-msg"
                 onsubmit="event.preventDefault()"
             >
                 <div class="form-group">
-                    <label>USERNAME</label>
+                    <label>What should everyone call you?</label>
                     <input type="text" name="username" required />
                 </div>
                 <div class="form-group">
-                    <label>EMAIL</label>
+                    <label>Email <span class="required">*</span></label>
                     <input type="email" name="email" required />
                 </div>
                 <div class="form-group">
-                    <label>PASSWORD</label>
+                    <label>Password <span class="required">*</span></label>
                     <input type="password" name="password" required />
                 </div>
                 <div id="error-msg"></div>
@@ -32,6 +33,9 @@
             </form>
             <p class="switch-auth">
                 <a href="/login">Already have an account?</a>
+            </p>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 16px; text-align: left;">
+                By registering, you agree to Neosec's <a href="#" style="color: var(--text-link); text-decoration: none;">Terms of Service</a> and <a href="#" style="color: var(--text-link); text-decoration: none;">Privacy Policy</a>.
             </p>
         </div>
     </body>

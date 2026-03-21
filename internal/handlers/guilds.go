@@ -49,9 +49,12 @@ func CreateGuild(w http.ResponseWriter, r *http.Request) {
 	_, _ = db.ChannelsCollection.InsertOne(context.Background(), channel)
 
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(w, `<div class="guild-icon" hx-get="/api/v9/guilds/%s/channels" hx-target="#channels-container" hx-swap="innerHTML">
-        <img src="%s" alt="%s">
-    </div>`, guild.ID.Hex(), guild.Icon, guild.Name)
+	fmt.Fprintf(w, `<div class="guild-icon-wrapper" onclick="document.querySelectorAll('.guild-icon-wrapper').forEach(e=>e.classList.remove('active')); this.classList.add('active');">
+        <div class="pill"></div>
+        <div class="guild-icon" hx-get="/api/v1/guilds/%s/channels" hx-target="#channels-container" hx-swap="innerHTML" title="%s">
+            <img src="%s" alt="%s" onerror="this.style.display='none'; this.parentNode.innerHTML='%s'"/>
+        </div>
+    </div>`, guild.ID.Hex(), guild.Name, guild.Icon, guild.Name, string(guild.Name[0]))
 }
 
 func GetGuildChannels(w http.ResponseWriter, r *http.Request) {
@@ -76,18 +79,19 @@ func GetGuildChannels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(w, `<div class="guild-header">%s</div>`, guild.Name)
+	fmt.Fprintf(w, `<div class="guild-header-area">%s <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg></div>`, guild.Name)
 	fmt.Fprintf(w, `<div class="channels-list">`)
+	fmt.Fprintf(w, `<div class="channel-category"><svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>Text Channels</div>`)
 	for _, ch := range channels {
-		fmt.Fprintf(w, `<div class="channel-item" hx-get="/api/v9/channels/%s" hx-target="#main-chat" hx-swap="innerHTML"># %s</div>`, ch.ID.Hex(), ch.Name)
+		fmt.Fprintf(w, `<a href="#" class="channel-item" hx-get="/api/v1/channels/%s" hx-target="#main-chat" hx-swap="innerHTML" onclick="document.querySelectorAll('.channel-item').forEach(e=>e.classList.remove('active')); this.classList.add('active');"><svg aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10.99 3.16A1 1 0 1 0 9 2.84L8.15 8H4a1 1 0 0 0 0 2h3.82l-.67 4H3a1 1 0 1 0 0 2h3.82l-.8 4.84a1 1 0 0 0 1.97.32L8.85 16h4.97l-.8 4.84a1 1 0 0 0 1.97.32l.86-5.16H20a1 1 0 1 0 0-2h-3.82l.67-4H21a1 1 0 1 0 0-2h-3.82l.8-4.84a1 1 0 1 0-1.97-.32L15.15 8h-4.97l.8-4.84ZM14.82 10h-4.97l-.67 4h4.97l.67-4Z" clip-rule="evenodd"></path></svg>%s</a>`, ch.ID.Hex(), ch.Name)
 	}
 	fmt.Fprintf(w, `</div>`)
 	// Create channel form
 	fmt.Fprintf(w, `
-	<div class="create-channel-form">
-		<form hx-post="/api/v9/guilds/%s/channels" hx-target=".channels-list" hx-swap="beforeend" onsubmit="setTimeout(() => { this.reset(); }, 10);">
-			<input type="text" name="name" placeholder="new-channel" required>
-			<button type="submit">+</button>
+	<div style="padding: 0 8px; margin-top: 8px;">
+		<form hx-post="/api/v1/guilds/%s/channels" hx-target=".channels-list" hx-swap="beforeend" onsubmit="setTimeout(() => { this.reset(); }, 10);" style="display:flex; gap: 4px;">
+			<input type="text" name="name" placeholder="new-channel" required style="flex: 1; padding: 6px; border-radius: 4px; border: none; background: var(--bg-tertiary); color: var(--text-normal);">
+			<button type="submit" style="padding: 6px 12px; background: var(--brand); color: white; border: none; border-radius: 4px; cursor:pointer;">+</button>
 		</form>
 	</div>
 	`, guildID.Hex())
@@ -122,5 +126,5 @@ func CreateChannel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(w, `<div class="channel-item" hx-get="/api/v9/channels/%s" hx-target="#main-chat" hx-swap="innerHTML"># %s</div>`, channel.ID.Hex(), channel.Name)
+	fmt.Fprintf(w, `<a href="#" class="channel-item" hx-get="/api/v1/channels/%s" hx-target="#main-chat" hx-swap="innerHTML" onclick="document.querySelectorAll('.channel-item').forEach(e=>e.classList.remove('active')); this.classList.add('active');"><svg aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10.99 3.16A1 1 0 1 0 9 2.84L8.15 8H4a1 1 0 0 0 0 2h3.82l-.67 4H3a1 1 0 1 0 0 2h3.82l-.8 4.84a1 1 0 0 0 1.97.32L8.85 16h4.97l-.8 4.84a1 1 0 0 0 1.97.32l.86-5.16H20a1 1 0 1 0 0-2h-3.82l.67-4H21a1 1 0 1 0 0-2h-3.82l.8-4.84a1 1 0 1 0-1.97-.32L15.15 8h-4.97l.8-4.84ZM14.82 10h-4.97l-.67 4h4.97l.67-4Z" clip-rule="evenodd"></path></svg>%s</a>`, channel.ID.Hex(), channel.Name)
 }

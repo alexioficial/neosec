@@ -36,9 +36,9 @@ func main() {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	})
 	r.Get("/login", handlers.LoginPage)
-	r.Post("/api/v9/auth/login", handlers.Login)
+	r.Post("/api/v1/auth/login", handlers.Login)
 	r.Get("/register", handlers.RegisterPage)
-	r.Post("/api/v9/auth/register", handlers.Register)
+	r.Post("/api/v1/auth/register", handlers.Register)
 	r.Get("/logout", handlers.Logout)
 
 	// Protected routes
@@ -48,19 +48,19 @@ func main() {
 		r.Get("/app", handlers.AppPage)
 
 		// HTMX API endpoints
-		r.Post("/api/v9/guilds", handlers.CreateGuild)
-		r.Get("/api/v9/guilds/{guildID}/channels", handlers.GetGuildChannels)
-		r.Post("/api/v9/guilds/{guildID}/channels", handlers.CreateChannel)
+		r.Post("/api/v1/guilds", handlers.CreateGuild)
+		r.Get("/api/v1/guilds/{guildID}/channels", handlers.GetGuildChannels)
+		r.Post("/api/v1/guilds/{guildID}/channels", handlers.CreateChannel)
 
 		// User & Friends
-		r.Get("/api/v9/users/@me", handlers.GetMe)
-		r.Post("/api/v9/users/@me/relationships", handlers.SendFriendRequest)
-		r.Post("/api/v9/users/@me/relationships/{requestID}/accept", handlers.AcceptFriendRequest)
-		r.Post("/api/v9/users/@me/relationships/{requestID}/reject", handlers.RejectFriendRequest)
-		r.Post("/api/v9/users/@me/channels", handlers.CreateDirectMessage)
+		r.Get("/api/v1/users/@me", handlers.GetMe)
+		r.Post("/api/v1/users/@me/relationships", handlers.SendFriendRequest)
+		r.Post("/api/v1/users/@me/relationships/{requestID}/accept", handlers.AcceptFriendRequest)
+		r.Post("/api/v1/users/@me/relationships/{requestID}/reject", handlers.RejectFriendRequest)
+		r.Post("/api/v1/users/@me/channels", handlers.CreateDirectMessage)
 
-		r.Get("/api/v9/channels/{channelID}", handlers.GetChannel)
-		r.Post("/api/v9/channels/{channelID}/messages", handlers.PostMessage)
+		r.Get("/api/v1/channels/{channelID}", handlers.GetChannel)
+		r.Post("/api/v1/channels/{channelID}/messages", handlers.PostMessage)
 
 		// WebSocket
 		r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {

@@ -48,7 +48,7 @@ func GetChannel(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 
 	// Print Header
-	fmt.Fprintf(w, `<div class="chat-header"># %s</div>`, channel.Name)
+	fmt.Fprintf(w, `<div class="chat-header"><svg aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10.99 3.16A1 1 0 1 0 9 2.84L8.15 8H4a1 1 0 0 0 0 2h3.82l-.67 4H3a1 1 0 1 0 0 2h3.82l-.8 4.84a1 1 0 0 0 1.97.32L8.85 16h4.97l-.8 4.84a1 1 0 0 0 1.97.32l.86-5.16H20a1 1 0 1 0 0-2h-3.82l.67-4H21a1 1 0 1 0 0-2h-3.82l.8-4.84a1 1 0 1 0-1.97-.32L15.15 8h-4.97l.8-4.84ZM14.82 10h-4.97l-.67 4h4.97l.67-4Z" clip-rule="evenodd"></path></svg>%s</div>`, channel.Name)
 
 	// Print Messages
 	fmt.Fprintf(w, `<div class="chat-messages" id="chat-messages" hx-swap-oob="true">`)
@@ -57,21 +57,26 @@ func GetChannel(w http.ResponseWriter, r *http.Request) {
 		db.UsersCollection.FindOne(context.Background(), bson.M{"_id": msg.AuthorID}).Decode(&author)
 
 		fmt.Fprintf(w, `
-			<div class="message">
+			<div class="message message-first">
 				<img src="%s" alt="avatar" class="message-avatar">
 				<div class="message-content">
-					<div class="message-author">%s <span class="message-time">%s</span></div>
+					<div class="message-header">
+                        <span class="message-author">%s</span>
+                        <span class="message-time">%s</span>
+                    </div>
 					<div class="message-text">%s</div>
 				</div>
+                <div class="message-compact">%s</div>
 			</div>
-		`, author.Avatar, author.Username, msg.CreatedAt.Format("01/02/2006 15:04"), msg.Content)
+		`, author.Avatar, author.Username, msg.CreatedAt.Format("01/02/2006 15:04"), msg.Content, msg.CreatedAt.Format("15:04"))
 	}
 	fmt.Fprintf(w, `</div>`)
 
 	// Print Input Area and script to subscribe
 	fmt.Fprintf(w, `
 	<div class="chat-input-area">
-		<form hx-post="/api/v9/channels/%s/messages" hx-target="#chat-messages" hx-swap="beforeend" onsubmit="setTimeout(() => { this.reset(); }, 10);">
+		<form class="chat-input-wrapper" hx-post="/api/v1/channels/%s/messages" hx-target="#chat-messages" hx-swap="beforeend" onsubmit="setTimeout(() => { this.reset(); }, 10);">
+            <button type="button" class="chat-input-attach"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"></path></svg></button>
 			<input type="text" name="content" placeholder="Message #%s" required autocomplete="off" autofocus>
 		</form>
 	</div>
@@ -130,12 +135,16 @@ func PostMessage(w http.ResponseWriter, r *http.Request) {
 	// Also return HTML to append for the sender
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(w, `
-		<div class="message">
+		<div class="message message-first">
 			<img src="%s" alt="avatar" class="message-avatar">
 			<div class="message-content">
-				<div class="message-author">%s <span class="message-time">%s</span></div>
+                <div class="message-header">
+                    <span class="message-author">%s</span>
+                    <span class="message-time">%s</span>
+                </div>
 				<div class="message-text">%s</div>
 			</div>
+            <div class="message-compact">%s</div>
 		</div>
 		<script>
 			var msgDiv = document.getElementById("chat-messages");
@@ -143,5 +152,5 @@ func PostMessage(w http.ResponseWriter, r *http.Request) {
 				msgDiv.scrollTop = msgDiv.scrollHeight;
 			}
 		</script>
-	`, author.Avatar, author.Username, msg.CreatedAt.Format("01/02/2006 15:04"), msg.Content)
+	`, author.Avatar, author.Username, msg.CreatedAt.Format("01/02/2006 15:04"), msg.Content, msg.CreatedAt.Format("15:04"))
 }

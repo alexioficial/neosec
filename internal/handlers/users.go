@@ -49,8 +49,8 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 					<div><b style="color:white;">%s</b><br><span style="font-size:12px; color:#949ba4;">Incoming Friend Request</span></div>
 				</div>
 				<div style="display:flex; gap:8px;">
-					<button hx-post="/api/v9/users/@me/relationships/%s/accept" hx-target="#main-chat" style="background:#248046; color:white; border:none; padding:8px; border-radius:50%%; cursor:pointer;" title="Accept">✓</button>
-					<button hx-post="/api/v9/users/@me/relationships/%s/reject" hx-target="#main-chat" style="background:#da373c; color:white; border:none; padding:8px; border-radius:50%%; cursor:pointer;" title="Decline">✕</button>
+					<button hx-post="/api/v1/users/@me/relationships/%s/accept" hx-target="#main-chat" style="background:#248046; color:white; border:none; padding:8px; border-radius:50%%; cursor:pointer;" title="Accept">✓</button>
+					<button hx-post="/api/v1/users/@me/relationships/%s/reject" hx-target="#main-chat" style="background:#da373c; color:white; border:none; padding:8px; border-radius:50%%; cursor:pointer;" title="Decline">✕</button>
 				</div>
 			</div>
 		`, fromUser.Avatar, fromUser.Username, req.ID.Hex(), req.ID.Hex())
@@ -69,7 +69,7 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 					<div><b style="color:white;">%s</b></div>
 				</div>
 				<div style="display:flex; gap:8px;">
-					<form hx-post="/api/v9/users/@me/channels" hx-target="#channels-container" onsubmit="event.preventDefault()">
+					<form hx-post="/api/v1/users/@me/channels" hx-target="#channels-container" onsubmit="event.preventDefault()">
 						<input type="hidden" name="friend_id" value="%s">
 						<button type="submit" style="background:#2b2d31; color:#dbdee1; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">Message</button>
 					</form>
@@ -79,17 +79,19 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	html := fmt.Sprintf(`
-		<div style="display:flex; flex-direction:column; height:100%%; background:#313338; color:#dbdee1; width:100%%;">
+		<div style="display:flex; flex-direction:column; height:100%%; background:var(--bg-primary); color:var(--text-normal); width:100%%;">
 			<!-- Header -->
-			<div style="height:48px; border-bottom:1px solid #1e1f22; display:flex; align-items:center; padding:0 16px; gap:16px;">
+			<div class="chat-header">
 				<div style="font-weight:bold; display:flex; align-items:center; gap:8px; margin-right:16px;">
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="#949ba4"><path d="M12 14C14.2091 14 15.8333 12.3333 15.8333 10.1667C15.8333 8 14.2091 6.33333 12 6.33333C9.79086 6.33333 8.16667 8 8.16667 10.1667C8.16667 12.3333 9.79086 14 12 14ZM12 15C9.33333 15 4 16.3333 4 19V20H20V19C20 16.3333 14.6667 15 12 15Z"/></svg>
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14C14.2091 14 15.8333 12.3333 15.8333 10.1667C15.8333 8 14.2091 6.33333 12 6.33333C9.79086 6.33333 8.16667 8 8.16667 10.1667C8.16667 12.3333 9.79086 14 12 14ZM12 15C9.33333 15 4 16.3333 4 19V20H20V19C20 16.3333 14.6667 15 12 15Z"/></svg>
 					Friends
 				</div>
-				<div style="width:1px; height:24px; background:#3f4147;"></div>
-				<button onclick="document.getElementById('tab-all').style.display='block'; document.getElementById('tab-pending').style.display='none'; document.getElementById('tab-add').style.display='none';" style="background:transparent; border:none; color:#dbdee1; cursor:pointer; font-weight:500; font-size:16px; padding:4px 8px; border-radius:4px;">All</button>
-				<button onclick="document.getElementById('tab-all').style.display='none'; document.getElementById('tab-pending').style.display='block'; document.getElementById('tab-add').style.display='none';" style="background:transparent; border:none; color:#dbdee1; cursor:pointer; font-weight:500; font-size:16px; padding:4px 8px; border-radius:4px;">Pending <span style="background:#da373c; color:white; border-radius:50%%; padding:2px 6px; font-size:12px;">%d</span></button>
-				<button onclick="document.getElementById('tab-all').style.display='none'; document.getElementById('tab-pending').style.display='none'; document.getElementById('tab-add').style.display='block';" style="background:#248046; border:none; color:white; cursor:pointer; font-weight:500; font-size:14px; padding:4px 8px; border-radius:4px;">Add Friend</button>
+				<div style="width:1px; height:24px; background:var(--bg-tertiary);"></div>
+                <div style="display:flex; gap: 8px;">
+				    <button onclick="document.getElementById('tab-all').style.display='block'; document.getElementById('tab-pending').style.display='none'; document.getElementById('tab-add').style.display='none';" style="background:transparent; border:none; color:var(--text-normal); cursor:pointer; font-weight:500; font-size:16px; padding:4px 8px; border-radius:4px;">All</button>
+				    <button onclick="document.getElementById('tab-all').style.display='none'; document.getElementById('tab-pending').style.display='block'; document.getElementById('tab-add').style.display='none';" style="background:transparent; border:none; color:var(--text-normal); cursor:pointer; font-weight:500; font-size:16px; padding:4px 8px; border-radius:4px;">Pending <span style="background:var(--danger); color:white; border-radius:50%%; padding:2px 6px; font-size:12px;">%d</span></button>
+				    <button onclick="document.getElementById('tab-all').style.display='none'; document.getElementById('tab-pending').style.display='none'; document.getElementById('tab-add').style.display='block';" style="background:#248046; border:none; color:white; cursor:pointer; font-weight:500; font-size:14px; padding:4px 8px; border-radius:4px;">Add Friend</button>
+                </div>
 			</div>
 
 			<!-- Tab Content -->
@@ -109,12 +111,12 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 
 				<!-- Add Friend Tab -->
 				<div id="tab-add" style="display:none;">
-					<h2 style="margin-top:0; color:white;">Add Friend</h2>
-					<p style="color:#949ba4; font-size:14px; margin-bottom:16px;">You can add friends with their Discord username.</p>
-					<form hx-post="/api/v9/users/@me/relationships" hx-target="#friend-msg" onsubmit="event.preventDefault()">
-						<div style="display:flex; background:#1e1f22; border:1px solid #000; border-radius:8px; padding:12px 16px; gap:16px; align-items:center;">
-							<input type="text" name="friend_username" placeholder="You can add friends with their username." required style="flex:1; background:transparent; border:none; color:#dbdee1; font-size:16px; outline:none;">
-							<button type="submit" style="background:#5865f2; color:white; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">Send Friend Request</button>
+					<h2 style="margin-top:0; margin-bottom: 8px; color:var(--header-primary); font-size: 16px; text-transform: uppercase;">Add Friend</h2>
+					<p style="color:var(--header-secondary); font-size:14px; margin-bottom:16px;">You can add friends with their Discord username.</p>
+					<form hx-post="/api/v1/users/@me/relationships" hx-target="#friend-msg" onsubmit="event.preventDefault()">
+						<div style="display:flex; background:var(--bg-tertiary); border:1px solid rgba(0,0,0,0.3); border-radius:8px; padding:12px 16px; gap:16px; align-items:center;">
+							<input type="text" name="friend_username" placeholder="You can add friends with their username." required style="flex:1; background:transparent; border:none; color:var(--text-normal); font-size:16px; outline:none;">
+							<button type="submit" style="background:var(--brand); color:white; border:none; padding:8px 16px; border-radius:4px; font-weight:500; cursor:pointer;">Send Friend Request</button>
 						</div>
 					</form>
 					<div id="friend-msg" style="margin-top: 10px; font-size:14px;"></div>
@@ -269,5 +271,5 @@ func CreateDirectMessage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"openChannel": "%s"}`, channelID.Hex()))
 
 	// Temporarily return a message. A more complete clone would render the DM list in the inner sidebar.
-	w.Write([]byte(`<script>htmx.ajax('GET', '/api/v9/channels/` + channelID.Hex() + `', {target:'#main-chat'});</script>`))
+	w.Write([]byte(`<script>htmx.ajax('GET', '/api/v1/channels/` + channelID.Hex() + `', {target:'#main-chat'});</script>`))
 }

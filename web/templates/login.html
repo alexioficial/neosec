@@ -9,20 +9,24 @@
     </head>
     <body class="auth-page">
         <div class="auth-container">
-            <h2>Welcome Back!</h2>
+            <h2>Welcome back!</h2>
             <p>We're so excited to see you again!</p>
             <form
-                hx-post="/api/v9/auth/login"
+                hx-post="/api/v1/auth/login"
                 hx-target="#error-msg"
                 onsubmit="event.preventDefault()"
             >
                 <div class="form-group">
-                    <label>EMAIL</label>
+                    <label>Email <span class="required">*</span></label>
                     <input type="email" name="email" required />
                 </div>
                 <div class="form-group">
-                    <label>PASSWORD</label>
+                    <label>Password <span class="required">*</span></label>
                     <input type="password" name="password" required />
+                </div>
+                <!-- Optional: Forgot Password link alignment -->
+                <div style="text-align: left; margin-top: -10px; margin-bottom: 16px;">
+                    <a href="#" style="color: var(--text-link); font-size: 14px; text-decoration: none;">Forgot your password?</a>
                 </div>
                 <div id="error-msg"></div>
                 <button type="submit" class="btn primary">Log In</button>
