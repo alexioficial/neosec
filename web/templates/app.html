@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Neosec Discord</title>
+        <link rel="stylesheet" href="/static/style.css" />
+        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                height: 100vh;
+                background-color: #36393f;
+                color: #dcddde;
+                font-family: sans-serif;
+                overflow: hidden;
+            }
+            .sidebar {
+                width: 72px;
+                background-color: #202225;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding-top: 12px;
+                gap: 8px;
+                overflow-y: auto;
+            }
+            .guild-icon {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background-color: #36393f;
+                cursor: pointer;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+                transition: border-radius 0.2s;
+            }
+            .guild-icon:hover {
+                border-radius: 30%;
+            }
+            .guild-icon img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .create-guild {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background-color: #36393f;
+                color: #3ba55c;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                font-size: 24px;
+                transition:
+                    border-radius 0.2s,
+                    background-color 0.2s,
+                    color 0.2s;
+            }
+            .create-guild:hover {
+                border-radius: 30%;
+                background-color: #3ba55c;
+                color: white;
+            }
+            .channels-sidebar {
+                width: 240px;
+                background-color: #2f3136;
+                display: flex;
+                flex-direction: column;
+            }
+            #channels-container {
+                flex: 1;
+                padding: 16px;
+                overflow-y: auto;
+            }
+            .guild-header {
+                font-weight: bold;
+                padding-bottom: 12px;
+                border-bottom: 1px solid #202225;
+                margin-bottom: 12px;
+                color: white;
+            }
+            .channels-list {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .channel-item {
+                padding: 6px 8px;
+                border-radius: 4px;
+                cursor: pointer;
+                color: #8e9297;
+                transition:
+                    background-color 0.1s,
+                    color 0.1s;
+            }
+            .channel-item:hover {
+                background-color: #393c43;
+                color: #dcddde;
+            }
+            .create-channel-form {
+                margin-top: 12px;
+                display: flex;
+            }
+            .create-channel-form input {
+                flex: 1;
+                padding: 6px;
+                border-radius: 4px;
+                border: none;
+                background: #202225;
+                color: white;
+            }
+            .create-channel-form button {
+                padding: 6px 12px;
+                border: none;
+                background: #5865f2;
+                color: white;
+                border-radius: 4px;
+                margin-left: 4px;
+                cursor: pointer;
+            }
+            .user-panel {
+                background-color: #292b2f;
+                padding: 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .user-panel img {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+            }
+            .user-panel-info {
+                display: flex;
+                flex-direction: column;
+            }
+            .user-panel-name {
+                font-weight: bold;
+                font-size: 14px;
+                color: white;
+            }
+            .main-chat {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                background-color: #36393f;
+            }
+            .chat-header {
+                height: 48px;
+                border-bottom: 1px solid #202225;
+                display: flex;
+                align-items: center;
+                padding: 0 16px;
+                font-weight: bold;
+                font-size: 16px;
+                color: white;
+            }
+            .chat-messages {
+                flex: 1;
+                padding: 16px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            .message {
+                display: flex;
+                gap: 16px;
+            }
+            .message-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+            }
+            .message-content {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .message-author {
+                font-weight: 500;
+                color: white;
+            }
+            .message-time {
+                font-size: 12px;
+                color: #72767d;
+                margin-left: 8px;
+            }
+            .message-text {
+                color: #dcddde;
+                word-break: break-word;
+            }
+            .chat-input-area {
+                padding: 16px;
+            }
+            .chat-input-area input {
+                width: 100%;
+                padding: 12px 16px;
+                border-radius: 8px;
+                border: none;
+                background-color: #40444b;
+                color: #dcddde;
+                font-size: 16px;
+                box-sizing: border-box;
+            }
+            .chat-input-area input:focus {
+                outline: none;
+            }
+            .modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.7);
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+            .modal.active {
+                display: flex;
+            }
+            .modal-content {
+                background: #36393f;
+                padding: 24px;
+                border-radius: 8px;
+                width: 400px;
+            }
+            .modal-content h2 {
+                margin-top: 0;
+                color: white;
+                text-align: center;
+                margin-bottom: 8px;
+            }
+            .modal-content p {
+                color: #b9bbbe;
+                text-align: center;
+                margin-bottom: 24px;
+            }
+            .modal-content input {
+                width: 100%;
+                padding: 10px;
+                margin-bottom: 16px;
+                border-radius: 4px;
+                border: none;
+                background: #202225;
+                color: white;
+                box-sizing: border-box;
+            }
+            .modal-content .buttons {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+            .modal-content button {
+                padding: 10px 24px;
+                border-radius: 4px;
+                border: none;
+                cursor: pointer;
+                font-weight: bold;
+            }
+            .btn-cancel {
+                background: transparent;
+                color: white;
+            }
+            .btn-cancel:hover {
+                text-decoration: underline;
+            }
+            .btn-create {
+                background: #5865f2;
+                color: white;
+            }
+            .btn-create:hover {
+                background: #4752c4;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="sidebar">
+            <!-- Home / DMs Button -->
+            <div
+                class="guild-icon"
+                hx-get="/api/v9/users/@me"
+                hx-target="#main-chat"
+                style="background-color: #5865f2"
+            >
+                <svg width="28" height="20" viewBox="0 0 28 20" fill="white">
+                    <path
+                        d="M23.0212 1.67671C21.3107 0.879656 19.5079 0.318797 17.6584 0C17.4062 0.461742 17.1749 0.934541 16.9708 1.4184C15.003 1.12145 12.9974 1.12145 11.0283 1.4184C10.819 0.934541 10.589 0.461742 10.3368 0C8.48074 0.318797 6.6845 0.879656 4.97405 1.67671C1.56727 6.77853 0.649666 11.7538 1.11108 16.652C3.10102 18.1418 5.3262 19.2743 7.69177 20C8.22338 19.2743 8.69519 18.4993 9.09812 17.691C8.32996 17.4013 7.58522 17.0424 6.87684 16.6135C7.06531 16.4762 7.24726 16.3387 7.42403 16.1847C11.5911 18.1749 16.408 18.1749 20.5763 16.1847C20.7531 16.3332 20.9351 16.4762 21.1171 16.6135C20.41 17.0369 19.6639 17.4013 18.897 17.691C19.3052 18.4993 19.7718 19.2689 20.3082 20C22.6685 19.2743 24.899 18.1418 26.8836 16.652C27.4304 10.9731 25.9665 6.04728 23.0212 1.67671ZM9.68041 13.6383C8.39754 13.6383 7.34085 12.4453 7.34085 10.994C7.34085 9.54272 8.37155 8.34973 9.68041 8.34973C10.9893 8.34973 12.0395 9.54272 12.0187 10.994C12.0187 12.4453 10.9828 13.6383 9.68041 13.6383ZM18.3161 13.6383C17.0332 13.6383 15.9765 12.4453 15.9765 10.994C15.9765 9.54272 17.0072 8.34973 18.3161 8.34973C19.625 8.34973 20.6751 9.54272 20.6543 10.994C20.6543 12.4453 19.625 13.6383 18.3161 13.6383Z"
+                    />
+                </svg>
+            </div>
+            <div
+                style="
+                    width: 32px;
+                    height: 2px;
+                    background-color: #2f3136;
+                    border-radius: 1px;
+                    margin: 4px 0;
+                "
+            ></div>
+
+            <!-- Servers -->
+            {{range .Guilds}}
+            <div
+                class="guild-icon"
+                hx-get="/api/v9/guilds/{{.ID.Hex}}/channels"
+                hx-target="#channels-container"
+                hx-swap="innerHTML"
+            >
+                <img src="{{.Icon}}" alt="{{.Name}}" />
+            </div>
+            {{end}}
+            <div
+                class="create-guild"
+                onclick="
+                    document
+                        .getElementById('create-guild-modal')
+                        .classList.add('active')
+                "
+            >
+                +
+            </div>
+            <div id="new-guilds"></div>
+        </div>
+
+        <div class="channels-sidebar">
+            <div id="channels-container">
+                <div
+                    style="
+                        padding: 16px;
+                        color: #8e9297;
+                        text-align: center;
+                        margin-top: 50%;
+                    "
+                >
+                    Select a server
+                </div>
+            </div>
+            <div class="user-panel">
+                <img src="{{.User.Avatar}}" alt="{{.User.Username}}" />
+                <div class="user-panel-info">
+                    <span class="user-panel-name">{{.User.Username}}</span>
+                    <a
+                        href="/logout"
+                        style="
+                            color: #ed4245;
+                            font-size: 12px;
+                            text-decoration: none;
+                        "
+                        >Logout</a
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="main-chat" id="main-chat">
+            <div
+                style="
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100%;
+                    color: #8e9297;
+                "
+            >
+                Select a channel to start chatting
+            </div>
+        </div>
+
+        <!-- Create Guild Modal -->
+        <div class="modal" id="create-guild-modal">
+            <div class="modal-content">
+                <h2>Customize your server</h2>
+                <p>
+                    Give your new server a personality with a name and an icon.
+                    You can always change it later.
+                </p>
+                <form
+                    hx-post="/api/v9/guilds"
+                    hx-target="#new-guilds"
+                    hx-swap="beforeend"
+                    onsubmit="
+                        event.preventDefault();
+                        setTimeout(() => {
+                            document
+                                .getElementById('create-guild-modal')
+                                .classList.remove('active');
+                            this.reset();
+                        }, 50);
+                    "
+                >
+                    <label
+                        style="
+                            display: block;
+                            margin-bottom: 8px;
+                            color: #8e9297;
+                            font-size: 12px;
+                            font-weight: bold;
+                            text-transform: uppercase;
+                        "
+                        >Server Name</label
+                    >
+                    <input type="text" name="name" required />
+                    <div class="buttons">
+                        <button
+                            type="button"
+                            class="btn-cancel"
+                            onclick="
+                                document
+                                    .getElementById('create-guild-modal')
+                                    .classList.remove('active')
+                            "
+                        >
+                            Back
+                        </button>
+                        <button type="submit" class="btn-create">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            window.currentChannelID = null;
+            function connectWS() {
+                var protocol =
+                    window.location.protocol === "https:" ? "wss:" : "ws:";
+                var wsURL = protocol + "//" + window.location.host + "/ws";
+                window.wsConn = new WebSocket(wsURL);
+
+                window.wsConn.onopen = function () {
+                    console.log("WebSocket connected");
+                    if (window.currentChannelID) {
+                        window.wsConn.send(
+                            JSON.stringify({
+                                type: "subscribe",
+                                channel_id: window.currentChannelID,
+                            }),
+                        );
+                    }
+                };
+
+                window.wsConn.onmessage = function (evt) {
+                    var msg = JSON.parse(evt.data);
+                    if (msg.channel_id === window.currentChannelID) {
+                        var messagesDiv =
+                            document.getElementById("chat-messages");
+                        if (messagesDiv) {
+                            var myID = "{{.User.ID.Hex}}";
+                            if (msg.author_id !== myID) {
+                                var authorName = msg.author
+                                    ? msg.author.username
+                                    : "Unknown";
+                                var authorAvatar = msg.author
+                                    ? msg.author.avatar
+                                    : "https://ui-avatars.com/api/?name=U";
+
+                                // format date
+                                var d = new Date(msg.created_at);
+                                var dateStr =
+                                    d.toLocaleDateString("en-US", {
+                                        month: "2-digit",
+                                        day: "2-digit",
+                                        year: "numeric",
+                                    }) +
+                                    " " +
+                                    d.getHours().toString().padStart(2, "0") +
+                                    ":" +
+                                    d.getMinutes().toString().padStart(2, "0");
+
+                                var newMsg = document.createElement("div");
+                                newMsg.className = "message";
+                                newMsg.innerHTML =
+                                    '<img src="' +
+                                    authorAvatar +
+                                    '" alt="avatar" class="message-avatar">' +
+                                    '<div class="message-content">' +
+                                    '<div class="message-author">' +
+                                    authorName +
+                                    ' <span class="message-time">' +
+                                    dateStr +
+                                    "</span></div>" +
+                                    '<div class="message-text">' +
+                                    msg.content +
+                                    "</div>" +
+                                    "</div>";
+                                messagesDiv.appendChild(newMsg);
+                                messagesDiv.scrollTop =
+                                    messagesDiv.scrollHeight;
+                            }
+                        }
+                    }
+                };
+
+                window.wsConn.onclose = function () {
+                    console.log("WebSocket disconnected, reconnecting...");
+                    setTimeout(connectWS, 1000);
+                };
+            }
+
+            connectWS();
+        </script>
+    </body>
+</html>
